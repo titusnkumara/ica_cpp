@@ -8,7 +8,12 @@ print(__doc__)
 
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
+try:
+    blocking  = str(sys.argv[1])
+except:
+    blocking = 'noblock'
 
 #load text to array
 
@@ -32,4 +37,4 @@ for ii, (model, name) in enumerate(zip(models, names), 1):
         plt.plot(sig, color=color)
 
 plt.subplots_adjust(0.09, 0.04, 0.94, 0.94, 0.26, 0.46)
-plt.show()
+plt.show(block=(blocking=='block'))

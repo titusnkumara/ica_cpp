@@ -22,7 +22,7 @@ using Eigen::ArrayXXd ;
 
 #define ArgCount 3
 #define PRECISION 10
-#define MAX_ITER 200
+#define MAX_ITER 500
 #define TOL 0.00000001 
 
 struct size{
@@ -122,6 +122,7 @@ MatrixXd S - computed sources
 */
 
 MatrixXd FastICA::fastica(MatrixXd X,int n_components,int max_iter, double tol){
+	timestamp_t prepr0 = get_timestamp();
 	
 	//n=rows,p=columns
 	int n,p;
@@ -158,19 +159,38 @@ MatrixXd FastICA::fastica(MatrixXd X,int n_components,int max_iter, double tol){
 	
 	w_init = generateRandomMatrix(n);
 	
+	//measure finished time
+    timestamp_t prepr1 = get_timestamp();
+    cout<<"preprocess "<<(prepr1 - prepr0) / 1000000.0L<<endl;
+	
+	
+	timestamp_t icapar0 = get_timestamp();
 	//calling the _ica_par paralleld ica algorithm function
 	//it will return W
 	W = _ica_par(X1,w_init,max_iter,tol);
 	//now we have mixed matrix W
 	//We should save this somewhere
 	
+	//measure finished time
+    timestamp_t icapar1 = get_timestamp();
+    cout<<"ica_par "<<(icapar1 - icapar0) / 1000000.0L<<endl;
+	
+	
+	timestamp_t post0 = get_timestamp();
 	result.W = W;	//save in global structure
 	
 	//if whiten
 	//do these things
 	unmixedSignal = (W*K)*X;
 	S = unmixedSignal.transpose();
+	//measure finished time
+    timestamp_t post1 = get_timestamp();
+    cout<<"postcal "<<(post1 - post0) / 1000000.0L<<endl;
+	
+	timestamp_t write0 = get_timestamp();
 	WriteResultToFile(S);
+	timestamp_t write1 = get_timestamp();
+    cout<<"writing "<<(write1 - write0) / 1000000.0L<<endl;
 	
 	return S;
 }
@@ -384,9 +404,13 @@ int main( int argc, char *argv[])
 	//So we don't have to compute size of array each time
 	dimensions.n = row;
 	dimensions.p = column;
-	
+	timestamp_t readT0 = get_timestamp();
 	//read input from file into X
 	X = readInputData(row,column);
+	//measure finished time
+    timestamp_t readT1 = get_timestamp();
+    cout<<"reading "<<(readT1 - readT0) / 1000000.0L<<endl;
+	
 	
 	//starting time
 	timestamp_t t0 = get_timestamp();
@@ -400,8 +424,9 @@ int main( int argc, char *argv[])
 	
 	//measure finished time
     timestamp_t t1 = get_timestamp();
-    cout<<"ica took : "<<(t1 - t0) / 1000000.0L<<endl;
-
+    cout<<"ica total "<<(t1 - t0) / 1000000.0L<<endl;
+	cout<<"number of iterations = "<<result.iterations<<"\n";
+	
 	//cout<<"_S = \n"<<_S<<"\nfrom : "<<result.iterations<<" iterations\n";
 	cout<<"W = \n"<<result.W<<"\n";
 	
